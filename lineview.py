@@ -24,27 +24,23 @@ def is_file_binary(file_obj) -> bool:
         return False
 
 
-def _default_error_func(msg, echo_func=print):
-    echo_func(msg)
+def write_error(msg) -> None:
+    print(msg, sys.stderr)
+
+def write_error_and_exit (msg, code=1) -> NoReturn:
+    write_error(msg)
+    exit(code)
 
 def _default_exit_func(code=1) -> NoReturn:
-    sys.exit(code)
+    exit(code)
 
-def lineview_impl(line, file, context, plain, n, no_highlight, echo_func=print, error_func=None, exit_func=None):
+def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
     """Implementation for displaying a specific line (with optional context) from a file or stdin."""
-    
-    if error_func is None:
-        error_func = _default_error_func
-    if exit_func is None:
-        exit_func = _default_exit_func
-
     # Check that the selected line and context are poisitive integers.
     if not isinstance(line, int) or line < 1:
-        error_func('Error: Selected line must be a positive integer.', echo_func)
-        exit_func(1)
+        write_error_and_exit('Error: Selected line must be a positive integer.')
     if not isinstance(context, int) or context < 0:
-        error_func('Error: Context must be a non-negative integer.', echo_func)
-        exit_func(1)
+        write_error_and_exit('Error: Context must be a non-negative integer.')
     
     if file is None:
         input_stream: TextIO = sys.stdin # Start streaming. A test for binary follows below. 
@@ -53,56 +49,51 @@ def lineview_impl(line, file, context, plain, n, no_highlight, echo_func=print, 
         if isinstance(file, str):
             #Check for the existence of the file specified by the string.
             if not os.path.exists(file):
-                error_func(f"Error: File '{file}' does not exist.", echo_func)
-                exit_func(1)
+                write_error_and_exit(f"Error: File '{file}' does not exist.")
             
             # The file path points to an existing file, so check if it's readable.
             if not os.access(file, os.R_OK):
-                error_func(f"Error: File '{file}' exists but is not readable.", echo_func)
-                exit_func(1)
+                write_error_and_exit(f"Error: File '{file}' exists but is not readable.")
 
             # The file path seems to be valid, so try to open it.
             try:
                 input_stream: TextIO = open(file, 'r')
             except Exception as e:
-                error_func(f"Error opening file '{file}': {e}", echo_func)
-                exit_func(1)
+                write_error_and_exit(f"Error opening file '{file}': {e}")
         
         # Here, we anticipate that a file was passed to this function via Click.
         else:
             # Check if file is a file-like object (has 'read' and '__iter__')
             if not (hasattr(file, 'read') and hasattr(file, '__iter__')):
-                error_func('Error: Invalid file input. Please provide a valid file path.', echo_func)
-                exit_func(1)
+                write_error_and_exit('Error: Invalid file input. Please provide a valid file path.')
             input_stream: TextIO = file
     try:
         sample = None
         # For file-like objects, try to sample and then rewind
         if hasattr(input_stream, 'buffer'):
             try:
-                input_stream_offset = input_stream.buffer.tell() if hasattr(input_stream.buffer, 'tell') and input_stream.buffer.seekable() else None
+                initial_stream_offset = input_stream.buffer.tell() if hasattr(input_stream.buffer, 'tell') and input_stream.buffer.seekable() else None
                 sample = input_stream.buffer.read(1024)
                 # Rewind after sampling
-                if input_stream_offset is not None:
-                    input_stream.buffer.seek(input_stream_offset)
+                if initial_stream_offset is not None:
+                    input_stream.buffer.seek(initial_stream_offset)
                 else:
                     # Non-seekable: buffer sample and rest of stream
                     rest = input_stream.buffer.read()
                     full_bytes: bytes = sample + rest
                     # Binary detection before decoding
                     if is_file_binary(file):
-                        error_func('Error: Binary input detected. This tool only supports text files and streams.', echo_func)
-                        exit_func(1)
+                        write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
                     text = full_bytes.decode('utf-8', errors='replace')
                     input_stream = io.StringIO(text)
             except Exception:
                 sample = None
         else:
             try:
-                input_stream_offset = input_stream.tell() if hasattr(input_stream, 'tell') and input_stream.seekable() else None
-                if input_stream_offset is not None:
+                initial_stream_offset = input_stream.tell() if hasattr(input_stream, 'tell') and input_stream.seekable() else None
+                if initial_stream_offset is not None:
                     sample = input_stream.read(1024)
-                    input_stream.seek(input_stream_offset)
+                    input_stream.seek(initial_stream_offset)
                 else:
                     # Non-seekable: buffer sample and rest of stream
                     sample = input_stream.read(1024)
@@ -112,14 +103,11 @@ def lineview_impl(line, file, context, plain, n, no_highlight, echo_func=print, 
                 sample = None
         if sample is not None:
             if isinstance(sample, bytes) and is_file_binary(io.BytesIO(sample)):
-                error_func('Error: Binary input detected. This tool only supports text files and streams.', echo_func)
-                exit_func(1)
+                write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
             elif isinstance(sample, str) and '\x00' in sample:
-                error_func('Error: Binary input detected. This tool only supports text files and streams.', echo_func)
-                exit_func(1)
+                write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
     except Exception as e:
-        error_func(f'Error reading input: {e}', echo_func)
-        exit_func(1)
+        write_error_and_exit(f'Error reading input: {e}')
     start: int = max(1, line - context)
     end: int = max(line + context, start)
     current = 0
@@ -136,8 +124,7 @@ def lineview_impl(line, file, context, plain, n, no_highlight, echo_func=print, 
         if current == line:
             found = True
     if not found:
-        error_func(f"Error: Line {line} out of range.", echo_func)
-        exit_func(1)
+        write_error_and_exit(f"Error: Line {line} out of range.")
     for idx, l in lines:
         display = l.rstrip('\n')
         is_selected = idx == line
@@ -163,7 +150,8 @@ def lineview_impl(line, file, context, plain, n, no_highlight, echo_func=print, 
                 display = f"  {display}"
         if is_selected and not plain and not no_highlight:
             display = f"\033[1;97;45m{display}\033[0m"
-        echo_func(display)
+        print(display)
+    exit(0)
 
 os.environ["CLICK_FORCE_PROMPT"] = "1"
 
@@ -180,7 +168,7 @@ def lineview(line, file, context, plain, n, no_highlight):
         click.echo(msg)
     def click_error(msg, echo_func=None):
         click.echo(msg, err=True)
-    lineview_impl(line, file, context, plain, n, no_highlight, echo_func=click_echo, error_func=click_error, exit_func=sys.exit)
+    lineview_impl(line, file, context, plain, n, no_highlight)
 
 if __name__ == '__main__':
     lineview()
