@@ -1,2 +1,10 @@
 __pycache__/
 
+# Build artifacts and egg-info directories
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+

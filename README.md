@@ -1,7 +1,7 @@
-# `lineview` Command
+# `viewline-command` (viewline)
 
 ## Overview
-`lineview` is a command-line tool that takes a filename or stream and displays the specified line in context. It is designed to make it easy to extract and view specific lines from text files or input streams.
+`viewline` is a command-line tool that takes a filename or stream and displays the specified line in context. It is designed to make it easy to extract and view specific lines from text files or input streams.
 
 ## Features
 - Display specific lines from a file or standard input.
@@ -10,22 +10,22 @@
 
 ## Installation for End Users
 
-To install `lineview` as a standalone application, use [pipx](https://pipxproject.github.io/pipx/):
+To install `viewline` as a standalone application, use [pipx](https://pipxproject.github.io/pipx/):
 
 ```bash
-pipx install git+https://github.com/dcloutman/lineview.git
+pipx install git+https://github.com/dcloutman/viewline-command.git
 ```
 
-This will make the `lineview` command available globally.
+This will make the `viewline` command available globally.
 
 ## Developer Setup
 
-If you are developing or contributing to `lineview`, clone the repository and install it locally:
+If you are developing or contributing to `viewline`, clone the repository and install it locally:
 
 ```bash
 # Clone the repository
-git clone https://github.com/dcloutman/lineview.git
-cd lineview
+git clone https://github.com/dcloutman/viewline-command.git
+cd viewline-command
 
 # (Recommended) Create and activate a virtual environment
 python3 -m venv .venv
@@ -44,31 +44,31 @@ ruff check .
 ```
 
 ## Usage
-The `lineview` command can be used as follows:
+The `viewline` command can be used as follows:
 
 ```bash
-lineview <filename> <line_number>
+viewline <filename> <line_number>
 ```
 
 ### Examples
 1. Display line 42 from a file:
    ```bash
-   lineview example.txt 42
+   viewline example.txt 42
    ```
 
 2. Display line 42 from a file with line numbers:
    ```bash
-   lineview -n example.txt 42
+   viewline -n example.txt 42
    ```
 
-3. Use `lineview` from a stream with line numbers:
+3. Use `viewline` from a stream with line numbers:
    ```bash
-   cat example.txt | lineview -n 42
+   cat example.txt | viewline -n 42
    ```
 
-3. Use `lineview` from a stream with line numbers but using pure ASCII (no terminal colors):
+3. Use `viewline` from a stream with line numbers but using pure ASCII (no terminal colors):
    ```bash
-   cat example.txt | lineview --plain -n 42
+   cat example.txt | viewline --plain -n 42
    ```
 
 ## Version

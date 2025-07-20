@@ -3,10 +3,10 @@ import os
 import io
 from click.testing import CliRunner
 from contextlib import redirect_stdout, redirect_stderr
-from lib import lineview_impl, is_file_binary
+from lib import viewline_impl, is_file_binary
 
 # Ensure there are no conflicting class definitions and the inheritance is correct
-class TestLineView(unittest.TestCase):
+class TestViewLine(unittest.TestCase):
     def test_is_file_binary(self):
         # Test with a binary file
         binary_file = io.BytesIO(b'\x00\x01\x02')
@@ -37,7 +37,7 @@ class TestLineView(unittest.TestCase):
                 stderr = io.StringIO()
                 try:
                     with redirect_stdout(stdout), redirect_stderr(stderr):
-                        lineview_impl(3, fileobj, 0, False, False, False)
+                        viewline_impl(3, fileobj, 0, False, False, False)
                 except SystemExit as e:
                     exit_code = e.code if isinstance(e.code, int) else 1
                 result_output = stdout.getvalue() + stderr.getvalue()
@@ -59,7 +59,7 @@ class TestLineView(unittest.TestCase):
                 stderr = io.StringIO()
                 try:
                     with redirect_stdout(stdout), redirect_stderr(stderr):
-                        lineview_impl(3, fileobj, 1, False, False, False)
+                        viewline_impl(3, fileobj, 1, False, False, False)
                 except SystemExit as e:
                     exit_code = e.code if isinstance(e.code, int) else 1
                 result_output = stdout.getvalue() + stderr.getvalue()
@@ -84,7 +84,7 @@ class TestLineView(unittest.TestCase):
         exit_code = 0
         try:
             with redirect_stdout(stdout), redirect_stderr(stderr):
-                lineview_impl(3, fileobj, 0, False, False, False)
+                viewline_impl(3, fileobj, 0, False, False, False)
         except SystemExit as e:
             exit_code = e.code if isinstance(e.code, int) else 1
         result_output = stdout.getvalue() + stderr.getvalue()
@@ -106,7 +106,7 @@ class TestLineView(unittest.TestCase):
                 stderr = io.StringIO()
                 try:
                     with redirect_stdout(stdout), redirect_stderr(stderr):
-                        lineview_impl(10, fileobj, 0, False, False, False)
+                        viewline_impl(10, fileobj, 0, False, False, False)
                 except SystemExit as e:
                     exit_code = e.code if isinstance(e.code, int) else 1
                 result_output = stdout.getvalue() + stderr.getvalue()
@@ -128,7 +128,7 @@ class TestLineView(unittest.TestCase):
                 stderr = io.StringIO()
                 try:
                     with redirect_stdout(stdout), redirect_stderr(stderr):
-                        lineview_impl(1, fileobj, 0, False, False, False)
+                        viewline_impl(1, fileobj, 0, False, False, False)
                 except SystemExit as e:
                     exit_code = e.code if isinstance(e.code, int) else 1
                 result_output = stdout.getvalue() + stderr.getvalue()

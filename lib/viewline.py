@@ -35,7 +35,7 @@ def _write_error_and_exit (msg, code=1) -> NoReturn:
 def _default_exit_func(code=1) -> NoReturn:
     exit(code)
 
-def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
+def viewline_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
     """Implementation for displaying a specific line (with optional context) from a file or stdin."""
     # Check that the selected line and context are poisitive integers.
     if not isinstance(line, int) or line < 1:

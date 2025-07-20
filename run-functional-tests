@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+# Functional test script for viewline-command
+
+# Test counters
+UNIT_TESTS=0
+UNIT_TESTS_FAILED=0
+FUNCTIONAL_TESTS=0
+FUNCTIONAL_TESTS_FAILED=0
+TOTAL_TESTS=0
+TOTAL_TESTS_FAILED=0
+
+echo "🧪 Running Functional Tests for viewline-command"
+echo "================================================"
+
+# Ensure we're in the right directory
+cd "$(dirname "$0")"
+
+# Source virtual environment if it exists
+if [ -d "venv/bin" ]; then
+    echo "📦 Activating virtual environment..."
+    source venv/bin/activate
+elif [ -d ".venv/bin" ]; then
+    echo "📦 Activating virtual environment..."
+    source .venv/bin/activate
+else
+    echo "⚠️  No virtual environment found. Using system Python."
+fi
+
+echo ""
+echo "🔧 Unit Tests"
+echo "--------------"
+# Run unit tests and capture the result
+if ./runtests > /tmp/unit_output 2>&1; then
+    UNIT_TEST_OUTPUT=$(cat /tmp/unit_output)
+    echo "$UNIT_TEST_OUTPUT"
+    UNIT_TESTS=$(echo "$UNIT_TEST_OUTPUT" | grep -o "Ran [0-9]* test" | grep -o "[0-9]*" || echo "0")
+    UNIT_TESTS_FAILED=0
+    echo "✅ Unit tests passed!"
+else
+    UNIT_TEST_OUTPUT=$(cat /tmp/unit_output)
+    echo "$UNIT_TEST_OUTPUT"
+    # Extract failed test count from output like "FAILED (failures=2)" or "FAILED (errors=1, failures=1)"
+    FAILURES=$(echo "$UNIT_TEST_OUTPUT" | grep -o "failures=[0-9]*" | grep -o "[0-9]*" || echo "0")
+    ERRORS=$(echo "$UNIT_TEST_OUTPUT" | grep -o "errors=[0-9]*" | grep -o "[0-9]*" || echo "0")
+    UNIT_TESTS=$(echo "$UNIT_TEST_OUTPUT" | grep -o "Ran [0-9]* test" | grep -o "[0-9]*" || echo "0")
+    UNIT_TESTS_FAILED=$((FAILURES + ERRORS))
+    echo "❌ Unit tests failed!"
+fi
+rm -f /tmp/unit_output
+
+echo ""
+echo "🚀 Functional Tests"
+echo "-------------------"
+
+# Test 1: Help command
+echo "Test 1: Help command..."
+if viewline --help > /dev/null 2>&1; then
+    echo "✅ Help command works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Help command failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 2: Basic functionality with a file
+echo "Test 2: Basic file reading..."
+if viewline 5 README.md > /dev/null 2>&1; then
+    echo "✅ Basic file reading works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Basic file reading failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 3: Line numbers option
+echo "Test 3: Line numbers option..."
+if viewline -n 5 README.md > /dev/null 2>&1; then
+    echo "✅ Line numbers option works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Line numbers option failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 4: Context option
+echo "Test 4: Context option..."
+if viewline -c 2 5 README.md > /dev/null 2>&1; then
+    echo "✅ Context option works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Context option failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 5: Plain mode
+echo "Test 5: Plain mode..."
+if viewline --plain 5 README.md > /dev/null 2>&1; then
+    echo "✅ Plain mode works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Plain mode failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 6: Pipe input
+echo "Test 6: Pipe input..."
+if echo -e "line1\nline2\nline3\nline4\nline5" | viewline 3 > /dev/null 2>&1; then
+    echo "✅ Pipe input works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Pipe input failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 7: Error handling - invalid line number
+echo "Test 7: Error handling (invalid line)..."
+if ! viewline 0 README.md > /dev/null 2>&1; then
+    echo "✅ Error handling works (correctly rejects line 0)"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Error handling failed (should reject line 0)"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 8: Error handling - non-existent file
+echo "Test 8: Error handling (non-existent file)..."
+if ! viewline 1 non_existent_file.txt > /dev/null 2>&1; then
+    echo "✅ Error handling works (correctly handles missing file)"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Error handling failed (should handle missing file)"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+echo ""
+echo "🏗️  Build Tests"
+echo "---------------"
+
+# Test 9: Clean reinstall
+echo "Test 9: Clean package reinstall..."
+if pip uninstall -y viewline-command > /dev/null 2>&1 && pip install -e . > /dev/null 2>&1; then
+    echo "✅ Clean reinstall works"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Clean reinstall failed"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Test 10: Command still works after reinstall
+echo "Test 10: Command works after reinstall..."
+if viewline --help > /dev/null 2>&1; then
+    echo "✅ Command works after reinstall"
+    ((FUNCTIONAL_TESTS++))
+else
+    echo "❌ Command failed after reinstall"
+    ((FUNCTIONAL_TESTS_FAILED++))
+fi
+
+# Calculate totals
+UNIT_TESTS_PASSED=$((UNIT_TESTS - UNIT_TESTS_FAILED))
+FUNCTIONAL_TESTS_PASSED=$((FUNCTIONAL_TESTS))
+TOTAL_TESTS_PASSED=$((UNIT_TESTS_PASSED + FUNCTIONAL_TESTS_PASSED))
+TOTAL_TESTS_FAILED=$((UNIT_TESTS_FAILED + FUNCTIONAL_TESTS_FAILED))
+TOTAL_TESTS=$((TOTAL_TESTS_PASSED + TOTAL_TESTS_FAILED))
+
+echo ""
+echo "======================="
+if [ "$TOTAL_TESTS_FAILED" -eq 0 ]; then
+    echo "🎉 All tests passed."
+else
+    echo "💣 $TOTAL_TESTS_FAILED tests failed."
+fi
+echo "======================="
+echo "Unit Tests:       $UNIT_TESTS_PASSED passed, $UNIT_TESTS_FAILED failed"
+echo "Functional Tests: $FUNCTIONAL_TESTS_PASSED passed, $FUNCTIONAL_TESTS_FAILED failed"
+echo "Total:            $TOTAL_TESTS_PASSED passed, $TOTAL_TESTS_FAILED failed"
+echo "======================="
+
+if [ "$TOTAL_TESTS_FAILED" -eq 0 ]; then
+    echo "✅ ALL TESTS PASSED!"
+    exit 0
+else
+    echo "❌ $TOTAL_TESTS_FAILED TEST(S) FAILED"
+    exit 1
+fi
