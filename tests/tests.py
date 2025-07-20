@@ -1,15 +1,13 @@
 import unittest
 import os
+import io
 from click.testing import CliRunner
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from lineview import lineview_impl
+from contextlib import redirect_stdout, redirect_stderr
+from lib import lineview_impl, is_file_binary
 
 # Ensure there are no conflicting class definitions and the inheritance is correct
 class TestLineView(unittest.TestCase):
     def test_is_file_binary(self):
-        from lineview import is_file_binary
-        import io
         # Test with a binary file
         binary_file = io.BytesIO(b'\x00\x01\x02')
         self.assertTrue(is_file_binary(binary_file))
@@ -35,8 +33,6 @@ class TestLineView(unittest.TestCase):
                 f.write('a\nb\nc\nd\ne\n')
             
             with open('testfile.txt', 'r') as fileobj:
-                import io
-                from contextlib import redirect_stdout, redirect_stderr
                 stdout = io.StringIO()
                 stderr = io.StringIO()
                 try:
@@ -59,8 +55,6 @@ class TestLineView(unittest.TestCase):
             with open('testfile.txt', 'w') as f:
                 f.write('a\nb\nc\nd\ne\n')
             with open('testfile.txt', 'r') as fileobj:
-                import io
-                from contextlib import redirect_stdout, redirect_stderr
                 stdout = io.StringIO()
                 stderr = io.StringIO()
                 try:
@@ -108,8 +102,6 @@ class TestLineView(unittest.TestCase):
             with open('testfile.txt', 'w') as f:
                 f.write('a\nb\nc\n')
             with open('testfile.txt', 'r') as fileobj:
-                import io
-                from contextlib import redirect_stdout, redirect_stderr
                 stdout = io.StringIO()
                 stderr = io.StringIO()
                 try:
@@ -132,8 +124,6 @@ class TestLineView(unittest.TestCase):
             with open('testfile.bin', 'wb') as f:
                 f.write(b'\x00\x01\x02')
             with open('testfile.bin', 'rb') as fileobj:
-                import io
-                from contextlib import redirect_stdout, redirect_stderr
                 stdout = io.StringIO()
                 stderr = io.StringIO()
                 try:

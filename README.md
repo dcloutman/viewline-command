@@ -8,11 +8,39 @@
 - Handles both text and binary files gracefully.
 - Provides context around the specified line for better understanding.
 
-## Installation
-To install `lineview`, clone this repository and ensure you have Python installed on your system. Then, run:
+## Installation for End Users
+
+To install `lineview` as a standalone application, use [pipx](https://pipxproject.github.io/pipx/):
 
 ```bash
-pip install .
+pipx install git+https://github.com/dcloutman/lineview.git
+```
+
+This will make the `lineview` command available globally.
+
+## Developer Setup
+
+If you are developing or contributing to `lineview`, clone the repository and install it locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/dcloutman/lineview.git
+cd lineview
+
+# (Recommended) Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install in editable mode with development dependencies
+pip install -e .[dev]
+
+# Make your changes to the code
+
+# Run tests to verify your changes
+pytest
+
+# Optionally, check code style and linting
+ruff check .
 ```
 
 ## Usage
@@ -44,7 +72,7 @@ lineview <filename> <line_number>
    ```
 
 ## Version
-Current version: 0.0.1
+Current version: 0.1.0
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.

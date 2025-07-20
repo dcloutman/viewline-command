@@ -1,0 +1,2 @@
+[console_scripts]
+lineview = bin.lineview:main

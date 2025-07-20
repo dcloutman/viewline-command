@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import sys
 import click
 import shutil
@@ -24,11 +23,13 @@ def is_file_binary(file_obj) -> bool:
         return False
 
 
-def write_error(msg) -> None:
+def _write_error(msg) -> None:
+    """Write an error message to stderr."""
     print(msg, sys.stderr)
 
-def write_error_and_exit (msg, code=1) -> NoReturn:
-    write_error(msg)
+def _write_error_and_exit (msg, code=1) -> NoReturn:
+    """Write an error message to stderr and exit with the given code."""
+    _write_error(msg)
     exit(code)
 
 def _default_exit_func(code=1) -> NoReturn:
@@ -38,9 +39,9 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
     """Implementation for displaying a specific line (with optional context) from a file or stdin."""
     # Check that the selected line and context are poisitive integers.
     if not isinstance(line, int) or line < 1:
-        write_error_and_exit('Error: Selected line must be a positive integer.')
+        _write_error_and_exit('Error: Selected line must be a positive integer.')
     if not isinstance(context, int) or context < 0:
-        write_error_and_exit('Error: Context must be a non-negative integer.')
+        _write_error_and_exit('Error: Context must be a non-negative integer.')
     
     if file is None:
         input_stream: TextIO = sys.stdin # Start streaming. A test for binary follows below. 
@@ -49,23 +50,23 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
         if isinstance(file, str):
             #Check for the existence of the file specified by the string.
             if not os.path.exists(file):
-                write_error_and_exit(f"Error: File '{file}' does not exist.")
+                _write_error_and_exit(f"Error: File '{file}' does not exist.")
             
             # The file path points to an existing file, so check if it's readable.
             if not os.access(file, os.R_OK):
-                write_error_and_exit(f"Error: File '{file}' exists but is not readable.")
+                _write_error_and_exit(f"Error: File '{file}' exists but is not readable.")
 
             # The file path seems to be valid, so try to open it.
             try:
                 input_stream: TextIO = open(file, 'r')
             except Exception as e:
-                write_error_and_exit(f"Error opening file '{file}': {e}")
+                _write_error_and_exit(f"Error opening file '{file}': {e}")
         
         # Here, we anticipate that a file was passed to this function via Click.
         else:
             # Check if file is a file-like object (has 'read' and '__iter__')
             if not (hasattr(file, 'read') and hasattr(file, '__iter__')):
-                write_error_and_exit('Error: Invalid file input. Please provide a valid file path.')
+                _write_error_and_exit('Error: Invalid file input. Please provide a valid file path.')
             input_stream: TextIO = file
     try:
         sample = None
@@ -83,7 +84,7 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
                     full_bytes: bytes = sample + rest
                     # Binary detection before decoding
                     if is_file_binary(file):
-                        write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
+                        _write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
                     text = full_bytes.decode('utf-8', errors='replace')
                     input_stream = io.StringIO(text)
             except Exception:
@@ -103,11 +104,11 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
                 sample = None
         if sample is not None:
             if isinstance(sample, bytes) and is_file_binary(io.BytesIO(sample)):
-                write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
+                _write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
             elif isinstance(sample, str) and '\x00' in sample:
-                write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
+                _write_error_and_exit('Error: Binary input detected. This tool only supports text files and streams.')
     except Exception as e:
-        write_error_and_exit(f'Error reading input: {e}')
+        _write_error_and_exit(f'Error reading input: {e}')
     start: int = max(1, line - context)
     end: int = max(line + context, start)
     current = 0
@@ -124,7 +125,7 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
         if current == line:
             found = True
     if not found:
-        write_error_and_exit(f"Error: Line {line} out of range.")
+        _write_error_and_exit(f"Error: Line {line} out of range.")
     for idx, l in lines:
         display = l.rstrip('\n')
         is_selected = idx == line
@@ -152,23 +153,3 @@ def lineview_impl(line, file, context, plain, n, no_highlight) -> NoReturn:
             display = f"\033[1;97;45m{display}\033[0m"
         print(display)
     exit(0)
-
-os.environ["CLICK_FORCE_PROMPT"] = "1"
-
-@click.command()
-@click.argument('line', type=int)
-@click.argument('file', required=False, type=click.File('r'))
-@click.option('-c', '--context', default=5, type=int, help='Number of context lines to show on either side.')
-@click.option('--plain', is_flag=True, help='Disable color highlighting, use asterisk for selected line.')
-@click.option('-n', is_flag=True, help='Show line numbers on the right.')
-@click.option('--no-highlight', is_flag=True, help='Do not highlight the selected line.')
-def lineview(line, file, context, plain, n, no_highlight):
-    """Display a specific line (with optional context) from a file or stdin."""
-    def click_echo(msg):
-        click.echo(msg)
-    def click_error(msg, echo_func=None):
-        click.echo(msg, err=True)
-    lineview_impl(line, file, context, plain, n, no_highlight)
-
-if __name__ == '__main__':
-    lineview()
