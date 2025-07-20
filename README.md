@@ -27,19 +27,19 @@ If you are developing or contributing to `viewline`, clone the repository and in
 git clone https://github.com/dcloutman/viewline-command.git
 cd viewline-command
 
-# (Recommended) Create and activate a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+# Create and activate a virtual environment
+python3 -m virtualenv venv # `venv` is acceptable, but `virtualenv` is recommended for developers.
+source venv/bin/activate
 
-# Install in editable mode with development dependencies
+# Install in editable mode with development dependencies.
 pip install -e .[dev]
 
-# Make your changes to the code
+# Make your changes to the code.
 
-# Run tests to verify your changes
+# Run tests to verify your changes.
 pytest
 
-# Optionally, check code style and linting
+# Optionally, check code style and linting.
 ruff check .
 ```
 
@@ -71,11 +71,12 @@ viewline <filename> <line_number>
    cat example.txt | viewline --plain -n 42
    ```
 
-## Version
-Current version: 0.1.0
-
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Version
+Current version: 0.1.1
+
